@@ -4,6 +4,7 @@ import Progress from './components/Progress';
 import { AudioRecorder } from 'react-audio-voice-recorder';
 import { Buffer } from 'buffer';
 import { WaveFile } from 'wavefile';
+import Loader from './components/Loader';
 
 type FileProgress = {
   file: string;
@@ -11,7 +12,9 @@ type FileProgress = {
 }
 
 function App() {
-  const [ready, setReady] = useState(false);
+  const [ready, setReady] = useState(true);
+  const [processing, setProcessing] = useState(false);
+  const [transcribed, setTranscribed] = useState('');
   const [progressItems, setProgressItems] = useState<Array<FileProgress>>([]);
   const worker = useRef<Worker>();
 
@@ -34,7 +37,6 @@ function App() {
           setReady(false);
           setProgressItems(prev => [...prev, e.data] as Array<FileProgress>); // Explicitly specify the type of `prev`
           break;
-
 
         case 'progress':
           // Model file progress: update one of the progress items.
@@ -62,7 +64,8 @@ function App() {
         
         case 'complete':
           // Generation complete: re-enable the "Search" button
-          console.log('complete', e.data.output.text)
+          setTranscribed(e.data.output.text)
+          setProcessing(false);
           break;
       }
     };
@@ -75,6 +78,7 @@ function App() {
   }, [])
 
   const addAudioElement = async (rawBlob: Blob) => {
+    setProcessing(true);
     // 1. convert the webm to wav
     const FFmpeg = await import("@ffmpeg/ffmpeg");
     const ffmpeg = FFmpeg.createFFmpeg({ log: false });
@@ -111,6 +115,7 @@ function App() {
 
   return (
     <>
+      <h1>Uqbar Speech to Text</h1>
       <AudioRecorder 
         onRecordingComplete={addAudioElement}
         showVisualizer={true}
@@ -122,6 +127,8 @@ function App() {
         downloadOnSavePress={false}
         downloadFileExtension="wav"
       />
+      { transcribed && <p>{transcribed}</p>}
+      { processing && <Loader />}
       <div className='progress-bars-container'>
         {ready === false && (
           <label>Loading models... (only run once)</label>
@@ -132,7 +139,6 @@ function App() {
           </div>
         ))}
       </div>
-      {/* <button onClick={loadModels}>Search</button> */}
     </>
   )
 }
