@@ -74,6 +74,7 @@ function App() {
     worker.current.addEventListener('message', onMessageReceived);
 
     // Define a cleanup function for when the component is unmounted.
+    // @ts-ignore
     return () => worker?.current.removeEventListener('message', onMessageReceived);
   }, [])
 
@@ -108,6 +109,7 @@ function App() {
     const audioData = wav.getSamples();
 
     // 3. send the wav to the worker
+    // @ts-ignore
     worker.current.postMessage({
       audio: audioData,
     })
